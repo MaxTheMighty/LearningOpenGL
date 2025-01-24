@@ -1,0 +1,9 @@
+/CMakeCache.txt
+/external/
+/cmake_install.cmake
+/cmake-build-debug
+/libglad.a
+/main
+/Makefile
+/CMakeFiles
+.idea/
