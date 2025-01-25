@@ -1,34 +1,24 @@
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream>
+#include <fstream>
+#include "headers/Shader.h"
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-
-// float vertices[] = {
-//     -0.5f,  -0.5f,  0.0f,
-//      0.5f,  -0.5f,  0.0f,
-//      0.0f,   0.5f,  0.0f
-// };
-
-// float vertices[] = {
-//      0.5f,  0.5f, 0.0f,
-//      0.5f, -0.5f, 0.0f,
-//     -0.5f, -0.5f, 0.0f,
-//     -0.5f,  0.5f, 0.0f
-// };
+int initGlfw(GLFWwindow** window);
 
 
 float verticesA[] = {
-    -1.0f, -1.0f, 0.0f,
-    -0.5f, 0.0f, 0.0f,
-    0.0f, -1.0f, 0.0f,
+    -1.0f, 1.0f, 0.0f, //top left
+    -1.0f, -1.0f, 0.0f,  //bottom left
+    1.0f, 1.0f, 0.0f,  //top right
 };
 
 float verticesB[] = {
 
-    0.0f, -1.0f, 0.0f,
-    0.5f, 0.0f, 0.0f,
-    1.0f, -1.0, 0.0f
+    1.0f, 1.0f, 0.0f, //top right
+    1.0f, -1.0f, 0.0f, //bottom right
+    -1.0f, -1.0, 0.0f //bottom left
 };
 
 
@@ -36,48 +26,17 @@ unsigned int indices[] = {
     0,1,2,3,4,5
 };
 
-const char *vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"out vec3 aPosOut;\n"
-"void main()\n"
-"{\n"
-"gl_Position = vec4(aPos.x,aPos.y,aPos.z, 1.0);\n"
-"aPosOut = aPos;\n"
-"}\0";
 
+const std::string vertexShaderPath = "/Users/maxwell/Desktop/Spring 2025/COMP565/Enviornment Setup/shaders/vertex_shader.glsl";
+const std::string fragmentShaderPath = "/Users/maxwell/Desktop/Spring 2025/COMP565/Enviornment Setup/shaders/fragment_shader.glsl";
+int main(){
 
-const char *fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec3 aPosOut;"
-"void main()\n"
-"{\n"
-// "FragColor = vec4(gl_PointCoord.x,gl_PointCoord.y,0.5,1.0f);\n"
-"FragColor = vec4(aPosOut.x+0.5f,aPosOut.y+0.5f,aPosOut.z+0.5f,1.0f);\n"
-// "FragColor = vec4(1.0f,0.5f,0.2f,1.0f);\n"
-"}\0";
-int main()
-{
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    GLFWwindow* window = glfwCreateWindow(800,600,"LearnOpenGL",NULL,NULL);
-    if (window == NULL) {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwMakeContextCurrent(window);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+    GLFWwindow* window = nullptr;
+    if (initGlfw(&window) == -1) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
-    glViewport(0,0,800,600);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     //
     // BUFFERS!
@@ -121,34 +80,26 @@ int main()
     // SHADERS!
     //
 
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-    glCompileShader(vertexShader);
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
+    Shader vertexShader(vertexShaderPath,GL_VERTEX_SHADER);
+    vertexShader.Source();
+    vertexShader.Compile();
+    vertexShader.PrintShaderInfoLog();
+
+    Shader fragmentShader(fragmentShaderPath, GL_FRAGMENT_SHADER);
+    fragmentShader.Source();
+    fragmentShader.Compile();
+    fragmentShader.PrintShaderInfoLog();
+
     //
     // SHADER PROGRAM
     //
 
     unsigned int shaderProgram;
+    int success;
+    char infoLog[512];
     shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
+    glAttachShader(shaderProgram, vertexShader.ID);
+    glAttachShader(shaderProgram, fragmentShader.ID);
     glLinkProgram(shaderProgram);
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
@@ -156,23 +107,26 @@ int main()
         std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
+    // uniforms
+    unsigned int uniformLocation = glGetUniformLocation(shaderProgram, "time");
+    float color_offset = 0.0f;
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         glUseProgram(shaderProgram);
+        glUniform1f(uniformLocation, color_offset);
         glBindVertexArray(VAOa);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glDrawArrays(GL_TRIANGLES,0,3);
+
         glBindVertexArray(VAOb);
         glDrawArrays(GL_TRIANGLES,0,3);
-        // glBindVertexArray(0);
-
+        color_offset+=0.01f;
         glfwSwapBuffers(window);
         glfwPollEvents();
-        // glClearColor(0.2f,0.3f,0.3f,1.0);
-        // glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.2f,0.3f,0.3f,1.0);
+        glClear(GL_COLOR_BUFFER_BIT);
     }
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    glDeleteShader(vertexShader.ID);
+    glDeleteShader(fragmentShader.ID);
     glfwTerminate();
     return 0;
 }
@@ -186,3 +140,37 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
     }
 }
+
+int initGlfw(GLFWwindow** window) {
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    *window = glfwCreateWindow(800,600,"LearnOpenGL",NULL,NULL);
+    if (window == NULL) {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(*window);
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        return -1;
+    }
+
+    glViewport(0,0,800,600);
+    glfwSetFramebufferSizeCallback(*window, framebuffer_size_callback);
+    return 1;
+}
+
+// void readShaderToString(std::string *shaderText, const std::string& filepath){
+//     std::ifstream shaderFile(filepath);
+//     std::string line = "";
+//     if (shaderFile.is_open()) {
+//         while (std::getline(shaderFile,line)) {
+//             shaderText->append(line);
+//             shaderText->append("\n");
+//         }
+//     }
+// }

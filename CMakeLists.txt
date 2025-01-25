@@ -3,7 +3,10 @@ project(Enviornment_Setup)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(main main.cpp)
+add_executable(main
+        main.cpp
+        headers/Shader.h
+        src/Shader.cpp)
 
 # Add GLAD library as 'glad'
 add_library(glad STATIC
